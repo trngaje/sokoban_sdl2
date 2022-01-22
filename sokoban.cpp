@@ -5,6 +5,15 @@
 #include <fstream>
 #include <dirent.h>
 #include <unistd.h>
+#ifdef OGS_SDL2
+#include <SDL2/SDL_keyboard.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_mixer.h>
+#include <SDL2/SDL2_gfxPrimitives.h>
+#include <SDL2/SDL2_framerate.h>
+#else
 #include <SDL/SDL_keysym.h>
 #include <SDL/SDL.h>
 #include <SDL/SDL_ttf.h>
@@ -12,12 +21,18 @@
 #include <SDL/SDL_mixer.h>
 #include <SDL/SDL_gfxPrimitives.h>
 #include <SDL/SDL_framerate.h>
+#endif
 #include "sokoban.h"
 #include "Functions.h"
 #include "CInput.h"
 #include "CUsbJoystickSetup.h"
 
 
+#ifdef OGS_SDL2
+SDL_Window* sdlWindow=NULL;
+SDL_Surface* sdlSurface=NULL;
+SDL_Renderer* sdlrenderer=NULL;
+#endif
 
 const int NrOfRows = 15,
 		  NrOfCols = 20,
@@ -231,8 +246,17 @@ class CWorldPart
 		}
 		if (Selected)
 		{
+#ifdef OGS_SDL2
+			SDL_Texture* texture = SDL_CreateTextureFromSurface( sdlrenderer, Surface );
+			boxRGBA(sdlrenderer,X,Y,X+TileWidth-1,Y+TileHeight-1,0,0,200,125);
+			rectangleRGBA(sdlrenderer,X,Y,X+TileWidth-1,Y+TileHeight-1,0,0,255,125);
+			SDL_RenderPresent( sdlrenderer );
+			SDL_DestroyTexture( texture );
+			
+#else
 			boxRGBA(Surface,X,Y,X+TileWidth-1,Y+TileHeight-1,0,0,200,125);
 			rectangleRGBA(Surface,X,Y,X+TileWidth-1,Y+TileHeight-1,0,0,255,125);
+#endif
 		}
 		//printf("End draw type:%d\n",Type);
  	}
@@ -1241,14 +1265,28 @@ bool AskQuestion(char *Msg)
     Rect.h = Buffer->h;
     Rect.x = StartScreenX;
     Rect.y = StartScreenY;
+#ifdef OGS_SDL2
+	SDL_Texture* texture = SDL_CreateTextureFromSurface( sdlrenderer, Buffer );
+	boxRGBA(sdlrenderer,60,80,260,160,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.a);
+	rectangleRGBA(sdlrenderer,60,80,260,160,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.a);
+	rectangleRGBA(sdlrenderer,61,81,259,159,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.a);
+	SDL_RenderPresent( sdlrenderer );
+	SDL_DestroyTexture( texture );
+#else	
 	boxRGBA(Buffer,60,80,260,160,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.unused);
 	rectangleRGBA(Buffer,60,80,260,160,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.unused);
 	rectangleRGBA(Buffer,61,81,259,159,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.unused);
+#endif
 	WriteText(Buffer,font,Msg,strlen(Msg),65,85,2,MenuTextColor);
 	SDL_FillRect(Screen,NULL,SDL_MapRGB(Screen->format,0,0,0));
     SDL_BlitSurface(Buffer,NULL,Screen,&Rect);
     //SDL_BlitSurface(Buffer1,NULL,Screen,NULL);
+#ifdef OGS_SDL2
+	SDL_BlitScaled(Screen, NULL, sdlSurface, NULL);
+	SDL_UpdateWindowSurface(sdlWindow);
+#else  
     SDL_Flip(Screen);
+#endif
 	{
 		while (!( Input->SpecialsHeld[SPECIAL_QUIT_EV] || Input->JoystickHeld[0][GP2X_BUTTON_A] || Input->JoystickHeld[0][GP2X_BUTTON_X] || Input->JoystickHeld[1][JoystickSetup->GetButtonValue(BUT_A)] || Input->JoystickHeld[1][JoystickSetup->GetButtonValue(BUT_X)] || Input->KeyboardHeld[JoystickSetup->GetKeyValue(BUT_X)] || Input->KeyboardHeld[JoystickSetup->GetKeyValue(BUT_A)]))
 		{
@@ -1280,14 +1318,25 @@ void PrintForm(char *msg)
     Rect.h = Buffer->h;
     Rect.x = StartScreenX;
     Rect.y = StartScreenY;
+#ifdef OGS_SDL2
+	boxRGBA(sdlrenderer,60,80,260,160,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.a);
+	rectangleRGBA(sdlrenderer,60,80,260,160,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.a);
+	rectangleRGBA(sdlrenderer,61,81,259,159,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.a);
+#else
 	boxRGBA(Buffer,60,80,260,160,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.unused);
 	rectangleRGBA(Buffer,60,80,260,160,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.unused);
 	rectangleRGBA(Buffer,61,81,259,159,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.unused);
+#endif
 	WriteText(Buffer,font,msg,strlen(msg),62,85,2,MenuTextColor);
     SDL_FillRect(Screen,NULL,SDL_MapRGB(Screen->format,0,0,0));
     SDL_BlitSurface(Buffer,NULL,Screen,&Rect);
     //SDL_BlitSurface(Buffer1,NULL,Screen,NULL);
+#ifdef OGS_SDL2
+	SDL_BlitScaled(Screen, NULL, sdlSurface, NULL);
+	SDL_UpdateWindowSurface(sdlWindow);
+#else  
     SDL_Flip(Screen);
+#endif
     while (!( Input->SpecialsHeld[SPECIAL_QUIT_EV] || Input->JoystickHeld[0][GP2X_BUTTON_A] || Input->JoystickHeld[1][JoystickSetup->GetButtonValue(BUT_A)] || Input->KeyboardHeld[JoystickSetup->GetKeyValue(BUT_A)]))
     {
         Input->Update();
@@ -1638,7 +1687,12 @@ void Game()
 		//printf("Na Fps Show\n");
 		SDL_FillRect(Screen,NULL,SDL_MapRGB(Screen->format,0,0,0));
         SDL_BlitSurface(Buffer,NULL,Screen,&Rect);
+#ifdef OGS_SDL2
+		SDL_BlitScaled(Screen, NULL, sdlSurface, NULL);
+		SDL_UpdateWindowSurface(sdlWindow);
+#else  
         SDL_Flip(Screen);
+#endif
 		if (!Player->IsMoving && StageDone())
 		{
 			SDL_Delay(250);
@@ -1809,9 +1863,15 @@ char *GetString(char *NameIn,char *Msg)
 
 
 		SDL_BlitSurface(IMGTitleScreen,NULL,Buffer,NULL);
+#ifdef OGS_SDL2
+		boxRGBA(sdlrenderer,60,80,260,160,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.a);
+		rectangleRGBA(sdlrenderer,60,80,260,160,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.a);
+		rectangleRGBA(sdlrenderer,61,81,259,159,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.a);
+#else
 		boxRGBA(Buffer,60,80,260,160,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.unused);
 		rectangleRGBA(Buffer,60,80,260,160,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.unused);
 		rectangleRGBA(Buffer,61,81,259,159,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.unused);
+#endif
 		WriteText(Buffer,font,Msg,strlen(Msg),65,85,2,MenuTextColor);
 		WriteText(Buffer,MonoFont,PackName,strlen(PackName),85,110,2,MenuTextColor);
 		if (Selection > 0)
@@ -1829,7 +1889,12 @@ char *GetString(char *NameIn,char *Msg)
         SDL_FillRect(Screen,NULL,SDL_MapRGB(Screen->format,0,0,0));
         SDL_BlitSurface(Buffer,NULL,Screen,&Rect);
         //SDL_BlitSurface(Buffer1,NULL,Screen,NULL);
+#ifdef OGS_SDL2
+		SDL_BlitScaled(Screen, NULL, sdlSurface, NULL);
+		SDL_UpdateWindowSurface(sdlWindow);
+#else  
         SDL_Flip(Screen);
+#endif
         SDL_framerateDelay(&Fpsman);
 	}
 	PackName[MaxSelection+1] = '\0';
@@ -1894,8 +1959,13 @@ void StageSelect()
 		SDL_BlitSurface(IMGBackground,NULL,Buffer,NULL);
 		WorldParts.Move();
 		WorldParts.Draw(Buffer);
+#ifdef OGS_SDL2
+		boxRGBA(sdlrenderer,0,0,319,13,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.a);
+		rectangleRGBA(sdlrenderer,0,-1,319,13,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.a);
+#else
 		boxRGBA(Buffer,0,0,319,13,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.unused);
 		rectangleRGBA(Buffer,0,-1,319,13,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.unused);
+#endif
 		if (SelectedLevel ==0)
 			sprintf(Tekst,"Level Pack: %s -> %d Levels - (A) Create New Level",LevelPackName,InstalledLevels);
 		else
@@ -2066,7 +2136,12 @@ void StageSelect()
 
 		SDL_FillRect(Screen,NULL,SDL_MapRGB(Screen->format,0,0,0));
         SDL_BlitSurface(Buffer,NULL,Screen,&Rect);
+#ifdef OGS_SDL2
+		SDL_BlitScaled(Screen, NULL, sdlSurface, NULL);
+		SDL_UpdateWindowSurface(sdlWindow);
+#else  
         SDL_Flip(Screen);
+#endif
         SDL_framerateDelay(&Fpsman);
 
 	}
@@ -2122,8 +2197,14 @@ void LoadGraphics()
 		Tmp = IMG_Load(FileName);
 	else
 		Tmp = IMG_Load("./graphics/floor.png");
+#ifdef OGS_SDL2
+	SDL_SetColorKey(Tmp,SDL_TRUE,SDL_MapRGB(Tmp->format,255,0,255));
+	IMGFloor = SDL_ConvertSurfaceFormat(Tmp, SDL_GetWindowPixelFormat(sdlWindow), 0);
+#else
 	SDL_SetColorKey(Tmp,SDL_SRCCOLORKEY |SDL_RLEACCEL,SDL_MapRGB(Tmp->format,255,0,255));
 	IMGFloor = SDL_DisplayFormat(Tmp);
+#endif
+
 	SDL_FreeSurface(Tmp);
 
 	sprintf(FileName,"./levelpacks/%s/wall.png",LevelPackFileName);
@@ -2131,8 +2212,14 @@ void LoadGraphics()
 		Tmp = IMG_Load(FileName);
 	else
 		Tmp = IMG_Load("./graphics/wall.png");
+#ifdef OGS_SDL2
+	SDL_SetColorKey(Tmp,SDL_TRUE,SDL_MapRGB(Tmp->format,255,0,255));
+	IMGWall = SDL_ConvertSurfaceFormat(Tmp, SDL_GetWindowPixelFormat(sdlWindow), 0);
+#else
 	SDL_SetColorKey(Tmp,SDL_SRCCOLORKEY |SDL_RLEACCEL,SDL_MapRGB(Tmp->format,255,0,255));
 	IMGWall = SDL_DisplayFormat(Tmp);
+#endif
+
 	SDL_FreeSurface(Tmp);
 
 	sprintf(FileName,"./levelpacks/%s/box.png",LevelPackFileName);
@@ -2140,8 +2227,14 @@ void LoadGraphics()
 		Tmp = IMG_Load(FileName);
 	else
 		Tmp = IMG_Load("./graphics/box.png");
+#ifdef OGS_SDL2
+	SDL_SetColorKey(Tmp,SDL_TRUE,SDL_MapRGB(Tmp->format,255,0,255));
+	IMGBox = SDL_ConvertSurfaceFormat(Tmp, SDL_GetWindowPixelFormat(sdlWindow), 0);
+#else
 	SDL_SetColorKey(Tmp,SDL_SRCCOLORKEY |SDL_RLEACCEL,SDL_MapRGB(Tmp->format,255,0,255));
 	IMGBox = SDL_DisplayFormat(Tmp);
+#endif
+
 	SDL_FreeSurface(Tmp);
 
 	sprintf(FileName,"./levelpacks/%s/spot.png",LevelPackFileName);
@@ -2149,8 +2242,14 @@ void LoadGraphics()
 		Tmp = IMG_Load(FileName);
 	else
 		Tmp = IMG_Load("./graphics/spot.png");
+#ifdef OGS_SDL2
+	SDL_SetColorKey(Tmp,SDL_TRUE,SDL_MapRGB(Tmp->format,255,0,255));
+	IMGSpot = SDL_ConvertSurfaceFormat(Tmp, SDL_GetWindowPixelFormat(sdlWindow), 0);
+#else
 	SDL_SetColorKey(Tmp,SDL_SRCCOLORKEY |SDL_RLEACCEL,SDL_MapRGB(Tmp->format,255,0,255));
 	IMGSpot = SDL_DisplayFormat(Tmp);
+#endif
+
 	SDL_FreeSurface(Tmp);
 
 	sprintf(FileName,"./levelpacks/%s/player.png",LevelPackFileName);
@@ -2158,8 +2257,14 @@ void LoadGraphics()
 		Tmp = IMG_Load(FileName);
 	else
 		Tmp = IMG_Load("./graphics/player.png");
+#ifdef OGS_SDL2
+	SDL_SetColorKey(Tmp,SDL_TRUE,SDL_MapRGB(Tmp->format,255,0,255));
+	IMGPlayer = SDL_ConvertSurfaceFormat(Tmp, SDL_GetWindowPixelFormat(sdlWindow), 0);
+#else
 	SDL_SetColorKey(Tmp,SDL_SRCCOLORKEY |SDL_RLEACCEL,SDL_MapRGB(Tmp->format,255,0,255));
 	IMGPlayer = SDL_DisplayFormat(Tmp);
+#endif
+
 	SDL_FreeSurface(Tmp);
 
 	sprintf(FileName,"./levelpacks/%s/empty.png",LevelPackFileName);
@@ -2167,8 +2272,14 @@ void LoadGraphics()
 		Tmp = IMG_Load(FileName);
 	else
 		Tmp = IMG_Load("./graphics/empty.png");
+#ifdef OGS_SDL2
+	SDL_SetColorKey(Tmp,SDL_TRUE,SDL_MapRGB(Tmp->format,255,0,255));
+	IMGEmpty = SDL_ConvertSurfaceFormat(Tmp, SDL_GetWindowPixelFormat(sdlWindow), 0);
+#else
 	SDL_SetColorKey(Tmp,SDL_SRCCOLORKEY |SDL_RLEACCEL,SDL_MapRGB(Tmp->format,255,0,255));
 	IMGEmpty = SDL_DisplayFormat(Tmp);
+#endif
+
 	SDL_FreeSurface(Tmp);
 
 	sprintf(FileName,"./levelpacks/%s/background.png",LevelPackFileName);
@@ -2176,7 +2287,13 @@ void LoadGraphics()
 		Tmp = IMG_Load(FileName);
 	else
 		Tmp = IMG_Load("./graphics/background.png");
+	
+#ifdef OGS_SDL2
+	IMGBackground = SDL_ConvertSurfaceFormat(Tmp, SDL_GetWindowPixelFormat(sdlWindow), 0);
+#else
 	IMGBackground = SDL_DisplayFormat(Tmp);
+#endif
+
 	SDL_FreeSurface(Tmp);
 
 	sprintf(FileName,"./levelpacks/%s/titlescreen.png",LevelPackFileName);
@@ -2184,7 +2301,11 @@ void LoadGraphics()
 		Tmp = IMG_Load(FileName);
 	else
 		Tmp = IMG_Load("./graphics/titlescreen.png");
+#ifdef OGS_SDL2
+	IMGTitleScreen = SDL_ConvertSurfaceFormat(Tmp, SDL_GetWindowPixelFormat(sdlWindow), 0);
+#else
 	IMGTitleScreen = SDL_DisplayFormat(Tmp);
+#endif
 	SDL_FreeSurface(Tmp);
 
 	sprintf(FileName,"./levelpacks/%s/colors.txt",LevelPackFileName);
@@ -2199,12 +2320,20 @@ void LoadGraphics()
 		MenuBoxColor.r = R;
 		MenuBoxColor.g = G;
 		MenuBoxColor.b = B;
+#ifdef OGS_SDL2
+		MenuBoxColor.a = A;
+#else
 		MenuBoxColor.unused = A;
+#endif
 		fscanf(ColorsFile,"[MenuBoxBorderColor]\nR=%d\nG=%d\nB=%d\nA=%d\n",&R,&G,&B,&A);
 		MenuBoxBorderColor.r = R;
 		MenuBoxBorderColor.g = G;
 		MenuBoxBorderColor.b = B;
+#ifdef OGS_SDL2
+	MenuBoxBorderColor.a = A;
+#else
 		MenuBoxBorderColor.unused = A;
+#endif
 		fclose(ColorsFile);
 	}
 	else
@@ -2215,11 +2344,19 @@ void LoadGraphics()
 		MenuBoxColor.r = 187;
 		MenuBoxColor.g = 164;
 		MenuBoxColor.b = 134;
+#ifdef OGS_SDL2
+		MenuBoxColor.a = 255;
+#else
 		MenuBoxColor.unused = 255;
+#endif
 		MenuBoxBorderColor.r = 153;
 		MenuBoxBorderColor.g = 123;
 		MenuBoxBorderColor.b = 87;
+#ifdef OGS_SDL2
+		MenuBoxBorderColor.a = 255;
+#else
 		MenuBoxBorderColor.unused = 255;
+#endif
 	}
 }
 
@@ -2272,13 +2409,24 @@ void Credits()
         if (Input->Ready() && (Input->KeyboardHeld[JoystickSetup->GetKeyValue(BUT_A)] || Input->KeyboardHeld[JoystickSetup->GetKeyValue(BUT_X)] || Input->KeyboardHeld[JoystickSetup->GetKeyValue(BUT_Y)] || Input->KeyboardHeld[JoystickSetup->GetKeyValue(BUT_B)] || Input->KeyboardHeld[JoystickSetup->GetKeyValue(BUT_START)] ))
             GameState = GSTitleScreen;
 
+#ifdef OGS_SDL2
+		boxRGBA(sdlrenderer,60,80,260,160,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.a);
+		rectangleRGBA(sdlrenderer,60,80,260,160,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.a);
+		rectangleRGBA(sdlrenderer,61,81,259,159,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.a);
+#else
 		boxRGBA(Buffer,60,80,260,160,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.unused);
 		rectangleRGBA(Buffer,60,80,260,160,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.unused);
 		rectangleRGBA(Buffer,61,81,259,159,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.unused);
+#endif
 		WriteText(Buffer,font,Tekst,strlen(Tekst),65,85,2,MenuTextColor);
 		SDL_FillRect(Screen,NULL,SDL_MapRGB(Screen->format,0,0,0));
         SDL_BlitSurface(Buffer,NULL,Screen,&Rect);
+#ifdef OGS_SDL2
+		SDL_BlitScaled(Screen, NULL, sdlSurface, NULL);
+		SDL_UpdateWindowSurface(sdlWindow);
+#else  
         SDL_Flip(Screen);
+#endif
         SDL_framerateDelay(&Fpsman);
 	}
 	delete[] Tekst;
@@ -2414,10 +2562,15 @@ void TitleScreen()
 						Input->Delay();
 					}
 
-
+#ifdef OGS_SDL2
+		boxRGBA(sdlrenderer,60,80,260,160,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.a);
+		rectangleRGBA(sdlrenderer,60,80,260,160,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.a);
+		rectangleRGBA(sdlrenderer,61,81,259,159,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.a);
+#else
 		boxRGBA(Buffer,60,80,260,160,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.unused);
 		rectangleRGBA(Buffer,60,80,260,160,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.unused);
 		rectangleRGBA(Buffer,61,81,259,159,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.unused);
+#endif
 		sprintf(Tekst,"Play Selected LevelPack\nLevel Editor\n<%s>\nCredits\nQuit",LevelPackName);
 		WriteText(Buffer,BigFont,Tekst,strlen(Tekst),90,85,2,MenuTextColor);
 		if (Selection > 1)
@@ -2436,7 +2589,12 @@ void TitleScreen()
         Rect.y = StartScreenY;
 		SDL_FillRect(Screen,NULL,SDL_MapRGB(Screen->format,0,0,0));
         SDL_BlitSurface(Buffer,NULL,Screen,&Rect);
+#ifdef OGS_SDL2
+		SDL_BlitScaled(Screen, NULL, sdlSurface, NULL);
+		SDL_UpdateWindowSurface(sdlWindow);
+#else  
         SDL_Flip(Screen);
+#endif
         SDL_framerateDelay(&Fpsman);
 	}
 	delete[] Tekst;
@@ -2631,9 +2789,15 @@ void LevelEditorMenu()
 						Input->Delay();
 					}
 
+#ifdef OGS_SDL2
+		boxRGBA(sdlrenderer,60,80,260,160,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.a);
+		rectangleRGBA(sdlrenderer,60,80,260,160,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.a);
+		rectangleRGBA(sdlrenderer,61,81,259,159,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.a);
+#else
 		boxRGBA(Buffer,60,80,260,160,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.unused);
 		rectangleRGBA(Buffer,60,80,260,160,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.unused);
 		rectangleRGBA(Buffer,61,81,259,159,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.unused);
+#endif
 		sprintf(Tekst,"Create New Levelpack\nLoad Selected LevelPack\nDelete Selected Levelpack\n<%s>\nMain Menu",LevelPackName);
 		WriteText(Buffer,BigFont,Tekst,strlen(Tekst),90,85,2,MenuTextColor);
 		if (Selection > 1)
@@ -2648,7 +2812,12 @@ void LevelEditorMenu()
 		WriteText(Buffer,BigFont,Tekst,strlen(Tekst),65,85,2,MenuTextColor);
 		SDL_FillRect(Screen,NULL,SDL_MapRGB(Screen->format,0,0,0));
         SDL_BlitSurface(Buffer,NULL,Screen,&Rect);
+#ifdef OGS_SDL2
+		SDL_BlitScaled(Screen, NULL, sdlSurface, NULL);
+		SDL_UpdateWindowSurface(sdlWindow);
+#else  
         SDL_Flip(Screen);
+#endif
         SDL_framerateDelay(&Fpsman);
 	}
 	delete Input;
@@ -2973,8 +3142,13 @@ void LevelEditor()
 								if (ShowPosition)
 								{
 									sprintf(Tekst,"X: %d - Y: %d",Selector.GetPlayFieldX(),Selector.GetPlayFieldY());
+#ifdef OGS_SDL2
+									boxRGBA(sdlrenderer,265,0,319,13,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.a);
+									rectangleRGBA(sdlrenderer,265,-1,319,13,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.a);
+#else
 									boxRGBA(Buffer,265,0,319,13,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.unused);
 									rectangleRGBA(Buffer,265,-1,319,13,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.unused);
+#endif
 									WriteText(Buffer,font,Tekst,strlen(Tekst),267,2,0,MenuTextColor);
 								}
 								if (!LevelErrorsFound())
@@ -3010,13 +3184,23 @@ void LevelEditor()
 		if (ShowPosition)
 		{
 			sprintf(Tekst,"X: %d - Y: %d",Selector.GetPlayFieldX(),Selector.GetPlayFieldY());
+#ifdef OGS_SDL2
+			boxRGBA(sdlrenderer,265,0,319,13,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.a);
+			rectangleRGBA(sdlrenderer,265,-1,319,13,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.a);
+#else
 			boxRGBA(Buffer,265,0,319,13,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.unused);
 			rectangleRGBA(Buffer,265,-1,319,13,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.unused);
+#endif
 			WriteText(Buffer,font,Tekst,strlen(Tekst),267,2,0,MenuTextColor);
 		}
 		SDL_FillRect(Screen,NULL,SDL_MapRGB(Screen->format,0,0,0));
         SDL_BlitSurface(Buffer,NULL,Screen,&Rect);
+#ifdef OGS_SDL2
+		SDL_BlitScaled(Screen, NULL, sdlSurface, NULL);
+		SDL_UpdateWindowSurface(sdlWindow);
+#else  
         SDL_Flip(Screen);
+#endif
         SDL_framerateDelay(&Fpsman);
 	}
 	delete Input;
@@ -3085,7 +3269,11 @@ void SetupUsbJoystickButtons()
 	SDL_Rect Rect;
 	char *Tekst = new char[300];
 	Tmp1 = SDL_CreateRGBSurface(SDL_SWSURFACE,WINDOW_WIDTH,WINDOW_HEIGHT,16,Screen->format->Rmask,Screen->format->Gmask,Screen->format->Bmask,Screen->format->Amask);
+#ifdef OGS_SDL2
+	Tmp = SDL_ConvertSurfaceFormat(Tmp1, SDL_GetWindowPixelFormat(sdlWindow), 0);
+#else
 	Tmp = SDL_DisplayFormat(Tmp1);
+#endif
 	SDL_FreeSurface(Tmp1);
 	bool done = false;
 	CInput *Input = new CInput(10);
@@ -3136,16 +3324,26 @@ void SetupUsbJoystickButtons()
         }
 
         SDL_BlitSurface(IMGTitleScreen,NULL,Tmp,NULL);
+#ifdef OGS_SDL2
+        boxRGBA(sdlrenderer,45,50,295,173,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.a);
+		rectangleRGBA(sdlrenderer,45,50,295,173,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.a);
+		rectangleRGBA(sdlrenderer,46,51,294,172,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.a);
+#else
         boxRGBA(Tmp,45,50,295,173,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.unused);
 		rectangleRGBA(Tmp,45,50,295,173,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.unused);
 		rectangleRGBA(Tmp,46,51,294,172,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.unused);
+#endif
         JoystickSetup->DrawCurrentSetup(Tmp,font,55,53,155,8,Selection,MenuTextColor,MenuTextColor,true);
 
         SDL_BlitSurface(Tmp,NULL,Buffer,NULL);
         SDL_FillRect(Screen,NULL,SDL_MapRGB(Screen->format,0,0,0));
         SDL_BlitSurface(Buffer,NULL,Screen,&Rect);
+#ifdef OGS_SDL2
+		SDL_BlitScaled(Screen, NULL, sdlSurface, NULL);
+		SDL_UpdateWindowSurface(sdlWindow);
+#else  
         SDL_Flip(Screen);
-
+#endif
         if(Input->Ready() && (Input->JoystickHeld[0][GP2X_BUTTON_A] || Input->JoystickHeld[1][JoystickSetup->GetButtonValue(BUT_A)] ||  Input->KeyboardHeld[DINGOO_BUTTON_A]))
         {
                if (GlobalSoundEnabled)
@@ -3155,18 +3353,32 @@ void SetupUsbJoystickButtons()
                 {
                     Input->Update();
                     SDL_BlitSurface(IMGTitleScreen,NULL,Tmp,NULL);
+#ifdef OGS_SDL2
+                    boxRGBA(sdlrenderer,45,50,295,173,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.a);
+                    rectangleRGBA(sdlrenderer,45,50,295,173,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.a);
+                    rectangleRGBA(sdlrenderer,46,51,294,172,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.a);
+#else
                     boxRGBA(Tmp,45,50,295,173,MenuBoxColor.r,MenuBoxColor.g,MenuBoxColor.b,MenuBoxColor.unused);
                     rectangleRGBA(Tmp,45,50,295,173,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.unused);
                     rectangleRGBA(Tmp,46,51,294,172,MenuBoxBorderColor.r,MenuBoxBorderColor.g,MenuBoxBorderColor.b,MenuBoxBorderColor.unused);
-
+#endif
 
                     JoystickSetup->DrawCurrentSetup(Tmp,font,55,53,155,8,Selection,MenuTextColor,MenuBoxBorderColor,true);
                     SDL_BlitSurface(Tmp,NULL,Buffer,NULL);
                     SDL_FillRect(Screen,NULL,SDL_MapRGB(Screen->format,0,0,0));
                     SDL_BlitSurface(Buffer,NULL,Screen,&Rect);
+#ifdef OGS_SDL2
+					SDL_BlitScaled(Screen, NULL, sdlSurface, NULL);
+					SDL_UpdateWindowSurface(sdlWindow);
+#else  
                     SDL_Flip(Screen);
+#endif
 
+#ifdef OGS_SDL2
+					for (Teller = 0;Teller<SDL_NUM_SCANCODES;Teller++)
+#else
                      for (Teller = 0;Teller<SDLK_LAST;Teller++)
+#endif
                         if(Input->KeyboardHeld[Teller])
                         {
                             done = true;
@@ -3236,7 +3448,18 @@ int main(int argc, char **argv)
 	{
 		printf("SDL Succesfully initialized\n");
 //		if(SDL_GP2X_GetPhysicalScreenSize(&Rect) == 0)
+#ifdef OGS_SDL2	
+			sdlWindow = SDL_CreateWindow("sokoban",
+                              SDL_WINDOWPOS_UNDEFINED,  
+                              SDL_WINDOWPOS_UNDEFINED,  
+                              WINDOW_WIDTH, WINDOW_HEIGHT,
+                              SDL_WINDOW_OPENGL); 
+			sdlSurface = SDL_GetWindowSurface(sdlWindow);
+			Screen = SDL_CreateRGBSurface(SDL_SWSURFACE, WINDOW_WIDTH, WINDOW_HEIGHT, 16, 0, 0, 0, 0);		
+			sdlrenderer = SDL_CreateRenderer(sdlWindow, -1, SDL_RENDERER_ACCELERATED);
+#else							  
             Screen = SDL_SetVideoMode( WINDOW_WIDTH, WINDOW_HEIGHT,16, SDL_SWSURFACE );
+#endif
 //        else
 //        {
 //            TvOutMode = true;

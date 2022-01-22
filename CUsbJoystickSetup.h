@@ -1,7 +1,11 @@
 #ifndef CUSBJOYSTICK_H
 #define CUSBJOYSTICK_H
 
+#ifdef OGS_SDL2
+#include <SDL2/SDL.h>
+#else
 #include <SDL/SDL.h>
+#endif
 #include <stdio.h>
 #include "Functions.h"
 

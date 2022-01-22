@@ -39,7 +39,21 @@ const int WINDOW_HEIGHT = 240;
 #define BUT_VOLMIN 12
 #define BUT_VOLUP 13
 
-
+#ifdef OGS_SDL2
+#define DINGOO_BUTTON_UP            SDL_SCANCODE_UP
+#define DINGOO_BUTTON_DOWN          SDL_SCANCODE_DOWN
+#define DINGOO_BUTTON_RIGHT         SDL_SCANCODE_RIGHT
+#define DINGOO_BUTTON_LEFT          SDL_SCANCODE_LEFT
+#define DINGOO_BUTTON_R             8
+#define DINGOO_BUTTON_L             9
+#define DINGOO_BUTTON_A             SDL_SCANCODE_LCTRL
+#define DINGOO_BUTTON_B             SDL_SCANCODE_LALT
+#define DINGOO_BUTTON_X             SDL_SCANCODE_SPACE
+#define DINGOO_BUTTON_Y             304
+#define DINGOO_BUTTON_SELECT        SDL_SCANCODE_ESCAPE
+#define DINGOO_BUTTON_START         SDL_SCANCODE_RETURN
+#define DINGOO_BUTTON_NONE          255
+#else
 #define DINGOO_BUTTON_UP            273
 #define DINGOO_BUTTON_DOWN          274
 #define DINGOO_BUTTON_RIGHT         275
@@ -53,3 +67,4 @@ const int WINDOW_HEIGHT = 240;
 #define DINGOO_BUTTON_SELECT        27
 #define DINGOO_BUTTON_START         13
 #define DINGOO_BUTTON_NONE          255
+#endif

@@ -24,10 +24,17 @@ void CInput::Update() {
     {
         if(Event.type == SDL_QUIT)
             SpecialsHeld[SPECIAL_QUIT_EV] = true;
+#ifdef OGS_SDL2
+        if(Event.type == SDL_KEYDOWN)
+            KeyboardHeld[Event.key.keysym.scancode] = true;
+        if(Event.type == SDL_KEYUP)
+            KeyboardHeld[Event.key.keysym.scancode] = false;
+#else
         if(Event.type == SDL_KEYDOWN)
             KeyboardHeld[Event.key.keysym.sym] = true;
         if(Event.type == SDL_KEYUP)
             KeyboardHeld[Event.key.keysym.sym] = false;
+#endif
         if(Event.type == SDL_JOYAXISMOTION)
             if(Event.jaxis.axis == 0)
             {
@@ -166,8 +173,13 @@ void CInput::Reset() {
     for (x=0;x<MAXMOUSES;x++)
         for (y=0;y<MAXMOUSEBUTTONS;y++)
             MouseHeld[x][y] = false;
+#ifdef OGS_SDL2
+    for (x=0;x<SDL_NUM_SCANCODES;x++)
+        KeyboardHeld[x] = false;
+#else
     for (x=0;x<SDLK_LAST;x++)
         KeyboardHeld[x] = false;
+#endif
     for (x=0;x<MAXSPECIALKEYS;x++)
         SpecialsHeld[x] = false;
     //printf("Cinput::update:12\n");

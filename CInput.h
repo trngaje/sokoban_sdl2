@@ -16,15 +16,25 @@
 #define JOYSTICK_DOWN MAXJOYSTICKBUTTONS-5
 #define JOYSTICK_NONE MAXJOYSTICKBUTTONS-1
 
+#ifdef OGS_SDL2
+#include <SDL2/SDL_joystick.h>
+#include <SDL2/SDL_keyboard.h>
+#include <SDL2/SDL.h>
+#else
 #include <SDL/SDL_joystick.h>
 #include <SDL/SDL_keysym.h>
 #include <SDL/SDL.h>
+#endif
 
 class CInput {
     public:
         bool JoystickHeld[MAXJOYSTICKS][MAXJOYSTICKBUTTONS];
         bool SpecialsHeld[MAXSPECIALKEYS];
+#ifdef OGS_SDL2
+		bool KeyboardHeld[SDL_NUM_SCANCODES];
+#else
         bool KeyboardHeld[SDLK_LAST];
+#endif
         bool MouseHeld[MAXMOUSES][MAXMOUSEBUTTONS];
         CInput(int UpdateCounterDelay);
         ~CInput(void);

@@ -1,5 +1,9 @@
 #include <unistd.h>
+#ifdef OGS_SDL2
+#include <SDL2/SDL2_gfxPrimitives.h>
+#else
 #include <SDL/SDL_gfxPrimitives.h>
+#endif
 #include "CUsbJoystickSetup.h"
 #include "CInput.h"
 #include "sokoban.h"
